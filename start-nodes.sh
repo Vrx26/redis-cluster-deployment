@@ -2,7 +2,7 @@
 
 # Settings
 BIN_PATH="/usr/bin"
-CLUSTER_HOST=192.168.15.7
+CLUSTER_HOST=$(ip addr | grep -E "inet .* brd" -m 1 | awk '{print $2}' | sed 's/\/.*//')
 PORT=30000
 TIMEOUT=2000
 NODES=2
@@ -11,13 +11,11 @@ ADDITIONAL_OPTIONS=""
 
 ENDPORT=$((PORT+NODES))
 
-if [ "$1" == "start" ]
-then
-    while [ $((PORT < ENDPORT)) != "0" ]; do
-        PORT=$((PORT+1))
-        echo "Starting $PORT"
-        mkdir "node-$PORT"
-        $BIN_PATH/redis-server --port $PORT  --protected-mode $PROTECTED_MODE --cluster-enabled yes --cluster-config-file node-$PORT/nodes-${PORT}.conf --cluster-node-timeout $TIMEOUT --appendonly yes --appendfilename node-$PORT/appendonly-${PORT}.aof --dbfilename node-$PORT/dump-${PORT}.rdb --logfile node-$PORT/${PORT}.log --daemonize yes ${ADDITIONAL_OPTIONS}
-    done
-    exit 0
-fi
+
+while [ $((PORT < ENDPORT)) != "0" ]; do
+    PORT=$((PORT+1))
+    echo "Starting $PORT"
+    $BIN_PATH/redis-server --port $PORT  --protected-mode $PROTECTED_MODE --cluster-enabled yes --cluster-config-file nodes-${PORT}.conf --cluster-node-timeout $TIMEOUT --appendonly yes --appendfilename appendonly-${PORT}.aof --dbfilename dump-${PORT}.rdb --logfile ${PORT}.log --daemonize yes ${ADDITIONAL_OPTIONS}
+done
+exit 0
+
